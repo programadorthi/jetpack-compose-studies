@@ -6,6 +6,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.Divider
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
@@ -41,34 +42,54 @@ fun ContentView() {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // TODO: Replace Image with Google Maps using AndroidView
-        Image(
-            bitmap = imageResource(id = R.drawable.passarela),
-            contentDescription = "Isso aqui e uma imagem",
-            modifier = Modifier.fillMaxWidth()
-        )
-        CircleImage(
-            modifier = Modifier
-                .offset(y = (-75).dp)
-        )
+        Box {
+            // TODO: Replace Image with Google Maps using AndroidView
+            Image(
+                bitmap = imageResource(id = R.drawable.passarela),
+                contentDescription = "Isso aqui e uma imagem",
+                modifier = Modifier.fillMaxWidth()
+            )
+            CircleImage(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .offset(y = 75.dp)
+            )
+        }
         Column(
-            modifier = Modifier.padding(8.dp)
+            modifier = Modifier
+                .padding(
+                    start = 8.dp,
+                    top = 80.dp,
+                    end = 8.dp,
+                    bottom = 8.dp
+                )
         ) {
             Text(
                 style = MaterialTheme.typography.h4,
                 text = "Turtle Rock"
             )
-            Row {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
                 Text(
                     style = MaterialTheme.typography.subtitle1,
                     text = "Joshua Tree National Park"
                 )
-                Spacer(modifier = Modifier.weight(weight = 1f))
                 Text(
                     style = MaterialTheme.typography.subtitle1,
                     text = "California"
                 )
             }
+            Divider(modifier = Modifier.padding(vertical = 8.dp))
+            Text(
+                style = MaterialTheme.typography.h6,
+                text = "About Turtle Rock"
+            )
+            Text(
+                style = MaterialTheme.typography.subtitle1,
+                text = "Descriptive text goes here."
+            )
         }
     }
 }
