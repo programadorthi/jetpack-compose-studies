@@ -27,7 +27,7 @@ class MainActivity : AppCompatActivity() {
         setContent {
             JetpackComposeTheme {
                 Surface(
-                        modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.fillMaxSize()
                 ) {
                     ContentView()
                 }
@@ -39,33 +39,34 @@ class MainActivity : AppCompatActivity() {
 @Composable
 fun ContentView() {
     Column(
-            horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         // TODO: Replace Image with Google Maps using AndroidView
         Image(
-                bitmap = imageResource(id = R.drawable.passarela),
-                modifier = Modifier.fillMaxWidth()
+            bitmap = imageResource(id = R.drawable.passarela),
+            contentDescription = "Isso aqui e uma imagem",
+            modifier = Modifier.fillMaxWidth()
         )
         CircleImage(
-                modifier = Modifier
-                        .offset(y = (-75).dp)
+            modifier = Modifier
+                .offset(y = (-75).dp)
         )
         Column(
-                modifier = Modifier.padding(8.dp)
+            modifier = Modifier.padding(8.dp)
         ) {
             Text(
-                    style = MaterialTheme.typography.h4,
-                    text = "Turtle Rock"
+                style = MaterialTheme.typography.h4,
+                text = "Turtle Rock"
             )
             Row {
                 Text(
-                        style = MaterialTheme.typography.subtitle1,
-                        text = "Joshua Tree National Park"
+                    style = MaterialTheme.typography.subtitle1,
+                    text = "Joshua Tree National Park"
                 )
                 Spacer(modifier = Modifier.weight(weight = 1f))
                 Text(
-                        style = MaterialTheme.typography.subtitle1,
-                        text = "California"
+                    style = MaterialTheme.typography.subtitle1,
+                    text = "California"
                 )
             }
         }
@@ -75,13 +76,14 @@ fun ContentView() {
 @Composable
 fun CircleImage(modifier: Modifier = Modifier) {
     Image(
-            bitmap = imageResource(id = R.drawable.turtlerock),
-            contentScale = ContentScale.Crop,
-            modifier = modifier
-                    .size(150.dp)
-                    .border(width = 4.dp, color = Color.White, shape = CircleShape)
-                    .shadow(elevation = 7.dp, shape = CircleShape)
-            //.then(modifier)
+        bitmap = imageResource(id = R.drawable.turtlerock),
+        contentDescription = "Isso aqui e uma imagem",
+        contentScale = ContentScale.Crop,
+        modifier = modifier
+            .size(150.dp)
+            .border(width = 4.dp, color = Color.White, shape = CircleShape)
+            .shadow(elevation = 7.dp, shape = CircleShape)
+        //.then(modifier)
     )
     /*val image = loadImageResource(id = R.drawable.turtlerock)
     image.resource.resource?.let {
