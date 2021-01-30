@@ -5,32 +5,46 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.Divider
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Surface
-import androidx.compose.material.Text
+import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.AmbientContext
 import androidx.compose.ui.platform.setContent
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.jetpackcompose.domain.Landmark
 import com.example.jetpackcompose.ui.theme.JetpackComposeTheme
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.json.Json
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // FIXME: avoid load heavy resources on main thread
+        val inputStream = resources.openRawResource(R.raw.landmark_data)
+        val json = inputStream.reader().readText()
+        val landmarks = Json {
+            ignoreUnknownKeys = true
+        }.decodeFromString(ListSerializer(Landmark.serializer()), json)
+
         setContent {
             JetpackComposeTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    ContentView()
+                    ContentView(landmarks)
                 }
             }
         }
@@ -38,7 +52,20 @@ class MainActivity : AppCompatActivity() {
 }
 
 @Composable
-fun ContentView() {
+fun ContentView(landmarks: List<Landmark>) {
+    LazyColumn {
+        items(count = landmarks.size) { index ->
+            val landmark = landmarks[index]
+            LandmarkRow(landmark)
+            if (index != landmarks.lastIndex) {
+                Divider()
+            }
+        }
+    }
+}
+
+@Composable
+fun DetailsView() {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -122,8 +149,31 @@ fun CircleImage(modifier: Modifier = Modifier) {
     }*/
 }
 
+@Composable
+fun LandmarkRow(landmark: Landmark) {
+    val imageId = AmbientContext.current.run {
+        resources.getIdentifier(landmark.imageName, "drawable", packageName)
+    }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Image(
+            bitmap = imageResource(id = imageId),
+            contentDescription = landmark.name,
+            modifier = Modifier.size(50.dp)
+        )
+        Spacer(modifier = Modifier.weight(weight = 0.05f))
+        Text(text = landmark.name)
+        Spacer(modifier = Modifier.weight(weight = 1f))
+        Icon(imageVector = Icons.Default.ArrowForward, contentDescription = "Arrow forward")
+    }
+}
+
 @Preview(showBackground = true)
 @Composable
 fun DefaultPreview() {
-    ContentView()
+    ContentView(listOf())
 }
