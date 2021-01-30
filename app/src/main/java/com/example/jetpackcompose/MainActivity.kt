@@ -2,9 +2,8 @@ package com.example.jetpackcompose
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.*
+import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
@@ -15,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.gesture.scrollorientationlocking.Orientation
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.AmbientContext
@@ -23,14 +23,12 @@ import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.navigate
-import androidx.navigation.compose.rememberNavController
+import androidx.navigation.NavType
+import androidx.navigation.compose.*
 import com.example.jetpackcompose.domain.Landmark
 import com.example.jetpackcompose.ui.theme.JetpackComposeTheme
-import kotlinx.serialization.builtins.ListSerializer
-import kotlinx.serialization.json.Json
+
+const val LANDMARK_ID = "landmark_id"
 
 object Destinations {
     const val DETAILS = "details"
@@ -40,14 +38,7 @@ object Destinations {
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        // FIXME: avoid load heavy resources on main thread
-        val inputStream = resources.openRawResource(R.raw.landmark_data)
-        val json = inputStream.reader().readText()
-        val landmarks = Json {
-            ignoreUnknownKeys = true
-        }.decodeFromString(ListSerializer(Landmark.serializer()), json)
-
+        val landmarks = landmarks()
         setContent {
             JetpackComposeTheme {
                 Surface(
@@ -61,8 +52,15 @@ class MainActivity : AppCompatActivity() {
                             composable(Destinations.LANDMARKS) {
                                 ContentView(navController, landmarks)
                             }
-                            composable(Destinations.DETAILS) {
-                                DetailsView(navController)
+                            composable(
+                                route = "${Destinations.DETAILS}/{$LANDMARK_ID}",
+                                arguments = listOf(navArgument(LANDMARK_ID) {
+                                    type = NavType.IntType
+                                })
+                            ) { backStackEntry ->
+                                val landmarkId = backStackEntry.arguments?.getInt(LANDMARK_ID) ?: -1
+                                val landmark = landmarks.firstOrNull { it.id == landmarkId }
+                                DetailsView(landmark)
                             }
                         }
                     )
@@ -84,7 +82,7 @@ fun ContentView(navController: NavController, landmarks: List<Landmark>) {
             items(count = landmarks.size) { index ->
                 val landmark = landmarks[index]
                 LandmarkRow(landmark, modifier = Modifier.clickable {
-                    navController.navigate(Destinations.DETAILS)
+                    navController.navigate("${Destinations.DETAILS}/${landmark.id}")
                 })
                 if (index != landmarks.lastIndex) {
                     Divider()
@@ -95,67 +93,78 @@ fun ContentView(navController: NavController, landmarks: List<Landmark>) {
 }
 
 @Composable
-fun DetailsView(navController: NavController) {
-    Column(
+fun DetailsView(landmark: Landmark?) {
+    val name = landmark?.name ?: "Not found"
+    LazyColumn(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Box {
-            // TODO: Replace Image with Google Maps using AndroidView
-            Image(
-                bitmap = imageResource(id = R.drawable.passarela),
-                contentDescription = "Isso aqui e uma imagem",
-                modifier = Modifier.fillMaxWidth()
-            )
-            CircleImage(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .offset(y = 75.dp)
-            )
-        }
-        Column(
-            modifier = Modifier
-                .padding(
-                    start = 8.dp,
-                    top = 80.dp,
-                    end = 8.dp,
-                    bottom = 8.dp
+        item {
+            Box {
+                // TODO: Replace Image with Google Maps using AndroidView
+                Image(
+                    bitmap = imageResource(id = R.drawable.passarela),
+                    contentDescription = landmark?.name ?: "Isso aqui e uma imagem",
+                    modifier = Modifier.fillMaxWidth()
                 )
-        ) {
-            Text(
-                style = MaterialTheme.typography.h4,
-                text = "Turtle Rock"
-            )
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                if (landmark != null) {
+                    CircleImage(
+                        landmark = landmark,
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .offset(y = 75.dp)
+                    )
+                }
+            }
+        }
+        item {
+            Column(
+                modifier = Modifier
+                    .padding(
+                        start = 8.dp,
+                        top = 80.dp,
+                        end = 8.dp,
+                        bottom = 8.dp
+                    )
             ) {
                 Text(
-                    style = MaterialTheme.typography.subtitle1,
-                    text = "Joshua Tree National Park"
+                    style = MaterialTheme.typography.h4,
+                    text = name
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        style = MaterialTheme.typography.subtitle1,
+                        text = landmark?.park ?: "Not found"
+                    )
+                    Text(
+                        style = MaterialTheme.typography.subtitle1,
+                        text = landmark?.state ?: "Not found"
+                    )
+                }
+                Divider(modifier = Modifier.padding(vertical = 8.dp))
+                Text(
+                    style = MaterialTheme.typography.h6,
+                    text = "About $name"
                 )
                 Text(
                     style = MaterialTheme.typography.subtitle1,
-                    text = "California"
+                    text = landmark?.description ?: "Not found"
                 )
             }
-            Divider(modifier = Modifier.padding(vertical = 8.dp))
-            Text(
-                style = MaterialTheme.typography.h6,
-                text = "About Turtle Rock"
-            )
-            Text(
-                style = MaterialTheme.typography.subtitle1,
-                text = "Descriptive text goes here."
-            )
         }
     }
 }
 
 @Composable
-fun CircleImage(modifier: Modifier = Modifier) {
+fun CircleImage(landmark: Landmark, modifier: Modifier = Modifier) {
+    val imageId = AmbientContext.current.run {
+        resources.getIdentifier(landmark.imageName, "drawable", packageName)
+    }
     Image(
-        bitmap = imageResource(id = R.drawable.turtlerock),
-        contentDescription = "Isso aqui e uma imagem",
+        bitmap = imageResource(id = imageId),
+        contentDescription = landmark.name,
         contentScale = ContentScale.Crop,
         modifier = modifier
             .size(150.dp)
@@ -200,10 +209,4 @@ fun LandmarkRow(landmark: Landmark, modifier: Modifier = Modifier) {
         Spacer(modifier = Modifier.weight(weight = 1f))
         Icon(imageVector = Icons.Default.ArrowForward, contentDescription = "Arrow forward")
     }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun DefaultPreview() {
-    //ContentView(navController, listOf())
 }
