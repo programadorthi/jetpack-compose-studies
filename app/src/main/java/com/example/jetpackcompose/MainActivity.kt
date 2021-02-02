@@ -3,30 +3,31 @@ package com.example.jetpackcompose
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.*
-import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
-import androidx.compose.runtime.Composable
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.gesture.scrollorientationlocking.Orientation
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.AmbientContext
 import androidx.compose.ui.platform.setContent
 import androidx.compose.ui.res.imageResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.NavType
 import androidx.navigation.compose.*
 import com.example.jetpackcompose.domain.Landmark
 import com.example.jetpackcompose.ui.theme.JetpackComposeTheme
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.json.Json
+import kotlin.random.Random
 
 const val LANDMARK_ID = "landmark_id"
 
@@ -44,26 +45,7 @@ class MainActivity : AppCompatActivity() {
                 Surface(
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    val navController = rememberNavController()
-                    NavHost(
-                        navController = navController,
-                        startDestination = Destinations.LANDMARKS,
-                        builder = {
-                            composable(Destinations.LANDMARKS) {
-                                ContentView(navController, landmarks)
-                            }
-                            composable(
-                                route = "${Destinations.DETAILS}/{$LANDMARK_ID}",
-                                arguments = listOf(navArgument(LANDMARK_ID) {
-                                    type = NavType.IntType
-                                })
-                            ) { backStackEntry ->
-                                val landmarkId = backStackEntry.arguments?.getInt(LANDMARK_ID) ?: -1
-                                val landmark = landmarks.firstOrNull { it.id == landmarkId }
-                                DetailsView(landmark)
-                            }
-                        }
-                    )
+                    Navigation(landmarks = landmarks)
                 }
             }
         }
@@ -71,20 +53,66 @@ class MainActivity : AppCompatActivity() {
 }
 
 @Composable
-fun ContentView(navController: NavController, landmarks: List<Landmark>) {
+fun Navigation(landmarks: List<Landmark>) {
+    val navController = rememberNavController()
+    NavHost(
+        navController = navController,
+        startDestination = Destinations.LANDMARKS,
+        builder = {
+            composable(Destinations.LANDMARKS) {
+                ContentView(navController, landmarks)
+            }
+            composable(
+                route = "${Destinations.DETAILS}/{$LANDMARK_ID}",
+                arguments = listOf(navArgument(LANDMARK_ID) {
+                    type = NavType.IntType
+                })
+            ) { backStackEntry ->
+                val landmarkId = backStackEntry.arguments?.getInt(LANDMARK_ID) ?: -1
+                val landmark = landmarks.firstOrNull { it.id == landmarkId }
+                DetailsView(landmark)
+            }
+        }
+    )
+}
+
+@Composable
+fun ContentView(
+    navController: NavController,
+    landmarks: List<Landmark>
+) {
+    val padding = 8.dp
+    var showAsFavoriteOnly by remember { mutableStateOf(false) }
+    val filteredList = landmarks.filter { landmark ->
+        showAsFavoriteOnly.not() || landmark.isFavorite
+    }
+
     Column(modifier = Modifier.fillMaxSize()) {
         Text(
-            modifier = Modifier.padding(8.dp),
+            modifier = Modifier.padding(padding),
             text = "Landmarks",
             style = MaterialTheme.typography.h4
         )
+        Divider()
+        Row(
+            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(padding)
+        ) {
+            Text(text = "Favorites only")
+            Switch(checked = showAsFavoriteOnly, onCheckedChange = {
+                showAsFavoriteOnly = showAsFavoriteOnly.not()
+            })
+        }
+        Divider()
         LazyColumn(modifier = Modifier.fillMaxHeight()) {
-            items(count = landmarks.size) { index ->
-                val landmark = landmarks[index]
+            items(count = filteredList.size) { index ->
+                val landmark = filteredList[index]
                 LandmarkRow(landmark, modifier = Modifier.clickable {
                     navController.navigate("${Destinations.DETAILS}/${landmark.id}")
                 })
-                if (index != landmarks.lastIndex) {
+                if (index != filteredList.lastIndex) {
                     Divider()
                 }
             }
@@ -207,6 +235,13 @@ fun LandmarkRow(landmark: Landmark, modifier: Modifier = Modifier) {
         Spacer(modifier = Modifier.weight(weight = 0.05f))
         Text(text = landmark.name)
         Spacer(modifier = Modifier.weight(weight = 1f))
+        if (landmark.isFavorite) {
+            Icon(
+                imageVector = Icons.Default.Star,
+                contentDescription = "Favorite",
+                tint = Color(0xFFF5BD1F)
+            )
+        }
         Icon(imageVector = Icons.Default.ArrowForward, contentDescription = "Arrow forward")
     }
 }

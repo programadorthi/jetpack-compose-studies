@@ -16,5 +16,6 @@ data class Landmark(
     val state: String,
     val description: String,
     val imageName: String,
+    val isFavorite: Boolean,
     val coordinates: Coordinates
 )
